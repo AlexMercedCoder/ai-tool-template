@@ -3,7 +3,8 @@ from dremio_simple_query.connect import DremioConnection
 from dotenv import load_dotenv
 from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.agents import initialize_agent, Tool
+from langchain.schema import AIMessage, HumanMessage
 import os
 
 # Load environment variables
@@ -22,61 +23,119 @@ dremio = DremioConnection(TOKEN, ARROW_ENDPOINT)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Initialize LangChain chat model and memory
-chat_model = ChatOpenAI(model_name="gpt-4", openai_api_key=OPENAI_API_KEY)
-memory = ConversationBufferMemory(return_messages=True)
+chat_model = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-# Function to fetch and inject data from Dremio (only on the first question)
-def fetch_dremio_data():
-    print("Fetching full query results from Dremio")
-    query = os.getenv("QUERY")
-    df = dremio.toPandas(query)
-
-    # Convert entire DataFrame to a string for the prompt
-    full_data = df.to_string(index=False)
+# Tool 1: Get Some Data from Dremio
+def get_customer_list(_input=None):
+    print("Fetching full customer list")
+    query = """SELECT DISTINCT id, customer FROM source.customers;"""
     
-    return full_data
+    # Use toArrow() to get StreamBatchReader
+    reader = dremio.toArrow(query)
+
+    # Read all batches into an Arrow Table
+    table = reader.read_all()
+    
+    # Convert Arrow Table to a string representation
+    data_string = str(table)  # or table.format()
+
+    if data_string.strip():
+        return f"CUSTOMER LIST:\n{data_string}"
+    
+    return "No customers found."
+
+get_customer_list_tool = Tool(
+    name="get_customer_list",
+    func=get_customer_list,
+    description="Retrieves a list of all customer names and IDs from the database."
+)
+
+# Tool 2: Get Customer Data
+def get_customer_data(customer_id: str):
+    print(f"Fetching data for customer ID {customer_id}")
+    query = f"""
+    SELECT * FROM source.customer_data 
+    WHERE company_id = '{customer_id}';
+    """
+    
+    # Use toArrow() to get StreamBatchReader
+    reader = dremio.toArrow(query)
+
+    # Read all batches into an Arrow Table
+    table = reader.read_all()
+    
+    # Convert Arrow Table to a string representation
+    data_string = str(table)
+
+    if data_string.strip():
+        print("Customer data retrieved.")
+        return data_string
+    
+    return "No data found for this customer."
+
+get_customer_data_tool = Tool(
+    name="get_customer_data",
+    func=get_customer_data,
+    description="Retrieves customer-specific data given a customer ID."
+)
+
+# Initialize AI Agent with tools
+tools = [get_customer_list_tool, get_customer_data_tool]
+agent = initialize_agent(
+    tools, 
+    chat_model, 
+    agent="chat-conversational-react-description", 
+    memory=memory, 
+    verbose=True
+)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     response = None
 
-    # Clear session on page refresh (GET request)
+    # Reset chat history on refresh (GET request)
     if request.method == "GET":
         session.clear()
 
-    # Initialize chat history if not already in session
+    # Initialize chat history if not set
     if "chat_history" not in session:
         session["chat_history"] = []
 
     if request.method == "POST":
-        print("Processing user question")
         user_question = request.form["question"]
-        
-        # Fetch data from Dremio only on the first request
-        if not session.get("context_loaded", False):
-            dremio_data = fetch_dremio_data()
-            print("Dremio data injected into context")
 
-            # Store full query result in memory
-            memory.save_context({"input": "Dremio Data Context"}, {"output": dremio_data})
-            session["context_loaded"] = True  # Mark context as loaded
+        # Build contextual prompt considering past conversations
+        past_chat = "\n".join([f"You: {msg['question']}\nAI: {msg['answer']}" for msg in session["chat_history"]])
+        full_prompt = f"""
+        You are a cheerful assistant for a sales agent looking to understand existing deals. 
+        - If a customer name is provided, ensure correct spelling by checking the customer list.
+        - Then retrieve their ID and fetch relevant customer data.
+        - Finally, answer the user's question in a helpful and engaging way.
 
-        # Load conversation history
-        messages = memory.load_memory_variables({})["history"]
+        Here is the conversation so far:
+        {past_chat}
 
-        # Inject Dremio data as part of the prompt
-        messages.append(SystemMessage(content="Here is relevant data from Dremio:\n" + memory.load_memory_variables({})["history"][-1].content))
-        messages.append(HumanMessage(content=user_question))
+        User's New Question: {user_question}
+        """
 
-        # Generate AI response
-        response = chat_model.invoke(messages)
+        # Try running the AI agent, and catch any errors
+        try:
+            agent_inputs = {"input": full_prompt}
+            response = agent.run(agent_inputs)
+        except Exception as e:
+            response = f"Error: {str(e)}"  # Display the error message
 
-        # Save the new conversation exchange
-        memory.save_context({"input": user_question}, {"output": response.content})
-        session["chat_history"].append({"question": user_question, "answer": response.content})
+        # Store chat history for continuity (APPEND new messages)
+        session["chat_history"].append({"question": user_question, "answer": response})
+        session.modified = True  # Ensure session updates persist
 
     return render_template("index.html", chat_history=session["chat_history"], response=response)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+
+
 

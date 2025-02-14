@@ -7,34 +7,27 @@
 - create a virtual environment `python -m venv venv`
 - activate the virtual environment `source venv/bin/activate`
 - install the requirements `pip install -r requirements.txt`
-- run the app `python app3.py`
+- customize the app based on the guidance in the customization section
+- run the app `python app.py`
 - open your browser and go to `http://localhost:5000`
+- rename `example.env` to `.env` and fill in the variables with your dremio and openai credentials
+
+* Take some time to prepare your data in Dremio creating tables with the data you'd want accessible to the agent and renaming any columns to make their purpose as clear to the agent as possible.
 
 ---
 
-Comparison of `app.py/index.html`, `app2.py/index2.html`, and `app3.py/index3.html`
 
 ## **Overview**
-The **Dremio AI Chat** is a Flask-based web application that integrates OpenAI's GPT-4 with real-time data retrieval from **Dremio**. It allows users to query sales opportunities dynamically. The three versions of the application—`app.py/index.html`, `app2.py/index2.html`, and `app3.py/index3.html`—differ in how they handle data retrieval, user interaction, and session management.
+This template can be used to create basic AI agent tools on top of data on Dremio.
 
 ---
 
-## **Comparison of `app.py`, `app2.py`, and `app3.py`**
+## **Overview of `app.py`**
 
 ### **1. User Input and Context Retrieval**
+
+
 - **`app.py`**  
-  - Users submit **a question only**.  
-  - On the first request, a **predefined SQL query** fetches general data from Dremio.  
-  - The retrieved data is **injected once** into the AI prompt.  
-  - All subsequent responses reuse the **same dataset**.  
-
-- **`app2.py`**  
-  - Users submit **a customer name and a question**.  
-  - The app first queries Dremio to **find the customer’s unique ID**.  
-  - Then, it uses that ID to **retrieve customer-specific data**.  
-  - The AI assistant uses this data to **generate a personalized response**.  
-
-- **`app3.py`**  
   - Users submit **a single natural language question** without specifying a customer.  
   - The AI agent decides when to:  
     1. **Retrieve a customer list** (to verify customer name spelling).  
@@ -46,17 +39,8 @@ The **Dremio AI Chat** is a Flask-based web application that integrates OpenAI's
 ---
 
 ### **2. Querying and Data Integration**
+  
 - **`app.py`**  
-  - Executes **one SQL query** on the first request.  
-  - Uses a **preloaded dataset** for all responses.  
-
-- **`app2.py`**  
-  - Uses a **two-step SQL query process**:  
-    1. Retrieve customer ID.  
-    2. Fetch data for that specific customer.  
-  - Ensures responses are **tailored to a specific customer**.  
-
-- **`app3.py`**  
   - Uses **LangChain tools** to execute **on-demand queries**.  
   - The AI agent determines **when to query** for customer names, IDs, or customer-specific data.  
   - Responses **dynamically adapt** based on retrieved data.  
@@ -64,16 +48,8 @@ The **Dremio AI Chat** is a Flask-based web application that integrates OpenAI's
 ---
 
 ### **3. Chat Session and Context Management**
+
 - **`app.py`**  
-  - Maintains chat history for a session.  
-  - **Resets on page refresh**, requiring the first query to run again.  
-
-- **`app2.py`**  
-  - Maintains chat history during a session.  
-  - Allows users to start a new conversation **by entering a new customer name**.  
-  - **Resets on refresh**.  
-
-- **`app3.py`**  
   - Maintains **a continuous chat experience**, preserving context across responses.  
   - **Chat history accumulates naturally** like a real chat app.  
   - **Resets on refresh**, but within a session, it **remembers previous exchanges**.  
@@ -81,17 +57,9 @@ The **Dremio AI Chat** is a Flask-based web application that integrates OpenAI's
 ---
 
 ### **4. Frontend and User Experience**
-#### **`index.html` (Used with `app.py`)**
-- Simple chat UI with **a single input field**.  
-- The user can **only ask general questions** based on the preloaded dataset.  
-- Uses **a clean aquatic UI** with a **chat history display**.  
 
-#### **`index2.html` (Used with `app2.py`)**
-- Includes **two input fields**: one for **customer name** and one for **the question**.  
-- Introduces a **"Typing..." loading animation**.  
-- AI responses are formatted with **`<pre>` tags** to ensure structured Dremio data is **readable**.  
-
-#### **`index3.html` (Used with `app3.py`)**
+#### **`index.html` (Used with `app3.py`)**
+- Theme customizable using CSS Variables
 - **Chat input remains at the bottom** (like modern messaging apps).  
 - **Messages accumulate correctly** instead of replacing previous ones.  
 - AI automatically determines whether it needs to fetch additional data.  
@@ -99,42 +67,114 @@ The **Dremio AI Chat** is a Flask-based web application that integrates OpenAI's
 
 ---
 
-## **📊 Summary of Key Differences**
+## Customizing to your needs
 
-| Feature                  | `app.py` / `index.html` | `app2.py` / `index2.html` | `app3.py` / `index3.html` |
-|--------------------------|------------------------|---------------------------|---------------------------|
-| **User Input**           | Single question field  | Customer + question fields | Single natural language question |
-| **Data Querying**        | One-time query        | Two-step query (customer lookup + data retrieval) | AI calls tools to fetch customer details as needed |
-| **Response Context**     | Static dataset        | Customer-specific data per request | Dynamic, AI-driven retrieval of necessary data |
-| **Personalization**      | Generic responses     | Personalized responses per customer | Fully adaptive to user needs |
-| **Session Handling**     | Resets on refresh     | Resets on refresh, allows customer changes | Preserves context within session, resets on refresh |
-| **Frontend Features**    | Simple chat UI        | Customer field, loader animation, formatted response | Full chat-like experience, messages accumulate, auto-scroll |
+### Color Scheme
 
----
+In `index.html` customize the colors in the css variables to your desired scheme.
 
-## **🚀 Choosing the Right Version**
-### **✅ Use `app.py/index.html` if:**
-- Responses should be based on **a static dataset**.  
-- Users will ask **general questions**.  
-- Performance is a priority (no need for multiple queries).  
+```css
+            --background-gradient-start: #1e3c72;
+            --background-gradient-end: #2a5298;
+            --text-color: white;
+            --chat-container-bg: rgba(255, 255, 255, 0.1);
+            --chat-box-bg: rgba(255, 255, 255, 0.2);
+            --scrollbar-thumb: rgba(255, 255, 255, 0.5);
+            --scrollbar-track: rgba(255, 255, 255, 0.1);
+            --user-message-bg: rgba(173, 216, 230, 0.8);
+            --user-message-text: #004466;
+            --ai-message-bg: rgba(255, 255, 255, 0.8);
+            --ai-message-text: #003366;
+            --input-bg: white;
+            --button-bg: #00aaff;
+            --button-hover-bg: #0088cc;
+            --loading-text-color: white;
+            --pre-bg: rgba(255, 255, 255, 0.1);
+        }
+```
 
-### **✅ Use `app2.py/index2.html` if:**
-- Responses should be **customer-specific**.  
-- Users should **manually specify the customer name**.  
-- The assistant should **fetch relevant data dynamically** before answering.  
+### Creating Tools for the Agent
 
-### **✅ Use `app3.py/index3.html` if:**
-- You want a **fully conversational chat experience**.  
-- Users should **not need to specify customer details manually**.  
-- The AI should determine **when and how to fetch data dynamically**.  
-- **Context from past messages should be remembered** for a continuous conversation.  
+You'll want to create tools so the agent can retrieve data for particular types of tasks you want them handle. Just customize the existings tools in the `app.py` to your needs. In general they should get a very specific amount of data that fits into the AI models context window, so design queries accordingly. So if the table with the data has LOTS of data then think of tools that can help the agent get the narrow data they need. Like in the example below the agent first can pull a list of customers to get a customers id so it can pull a narrower number of records from customer_data table vs just putting all customer data in the prompt which would greatly exceed the context window of the AI model and error:
 
----
+```py
+# Tool 1: Get Some Data from Dremio
+def get_customer_list(_input=None):
+    print("Fetching full customer list")
+    query = """SELECT DISTINCT id, customer FROM source.customers;"""
+    
+    # Use toArrow() to get StreamBatchReader
+    reader = dremio.toArrow(query)
 
-## **🎯 Final Thoughts**
-Each version provides a **real-time AI-powered chat experience** backed by **Dremio's data engine**.  
-- **`app.py` is the simplest**, but lacks personalization.  
-- **`app2.py` improves personalization**, but requires manual input for customer selection.  
-- **`app3.py` is the most advanced**, allowing **fully dynamic** and **context-aware** conversations.  
+    # Read all batches into an Arrow Table
+    table = reader.read_all()
+    
+    # Convert Arrow Table to a string representation
+    data_string = str(table)  # or table.format()
 
-🚀 **Choose the right version based on your needs!** 🚀
+    if data_string.strip():
+        return f"CUSTOMER LIST:\n{data_string}"
+    
+    return "No customers found."
+
+get_customer_list_tool = Tool(
+    name="get_customer_list",
+    func=get_customer_list,
+    description="Retrieves a list of all customer names and IDs from the database."
+)
+
+# Tool 2: Get Customer Data
+def get_customer_data(customer_id: str):
+    print(f"Fetching data for customer ID {customer_id}")
+    query = f"""
+    SELECT * FROM source.customer_data 
+    WHERE company_id = '{customer_id}';
+    """
+    
+    # Use toArrow() to get StreamBatchReader
+    reader = dremio.toArrow(query)
+
+    # Read all batches into an Arrow Table
+    table = reader.read_all()
+    
+    # Convert Arrow Table to a string representation
+    data_string = str(table)
+
+    if data_string.strip():
+        print("Customer data retrieved.")
+        return data_string
+    
+    return "No data found for this customer."
+
+get_customer_data_tool = Tool(
+    name="get_customer_data",
+    func=get_customer_data,
+    description="Retrieves customer-specific data given a customer ID."
+)
+```
+
+Make sure all your tools are included in the initialization of the agent.
+
+```py
+# Initialize AI Agent with tools
+tools = [get_customer_list_tool, get_customer_data_tool] #<-- all tools listed here
+agent = initialize_agent(
+    tools, 
+    chat_model, 
+    agent="chat-conversational-react-description", 
+    memory=memory, 
+    verbose=True
+)
+```
+
+### Customizing the Agent Prompt
+
+Customize this portion of the AI Agent Prompt in `app.py` so that is describes how the agent should think of itself and guidance on using the tools provided.
+
+```
+        You are a cheerful assistant for a sales agent looking to understand existing deals. 
+        - If a customer name is provided, ensure correct spelling by checking the customer list.
+        - Then retrieve their ID and fetch relevant customer data.
+        - Finally, answer the user's question in a helpful and engaging way.
+```
+
