@@ -12,6 +12,7 @@
   - [Color Scheme](#color-scheme)
   - [Creating Tools for the Agent](#creating-tools-for-the-agent)
   - [Customizing the Agent Prompt](#customizing-the-agent-prompt)
+  - [Customize the Model](#customize-the-model)
 
 ## Getting Started
 
@@ -191,3 +192,15 @@ Customize this portion of the AI Agent Prompt in `app.py` so that is describes h
         - Finally, answer the user's question in a helpful and engaging way.
 ```
 
+### Customize the Model
+
+The model is currently using `gpt4o` which requires an enterprise OpenAI Key in your `.env` if you want to use a different OpenAI model like `gpt-4` or `gpt-3.5-turbo` then just update the `model_name` property in the `ChatOpenAI` function. If you want to use another model consult the Langchain documentation for connecting to your preferred model whether running in the cloud or locally.
+
+```py
+# OpenAI API key
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Initialize LangChain chat model and memory
+chat_model = ChatOpenAI(model_name="gpt-4o", openai_api_key=OPENAI_API_KEY)
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+```
