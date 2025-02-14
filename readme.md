@@ -1,4 +1,17 @@
-# **Dremio AI Chat**
+# **Dremio AI Chat Tool Template Guide**
+
+## Table of Contents
+- [Getting Started](#getting-started)
+- [Overview](#overview)
+- [Overview of `app.py`](#overview-of-apppy)
+  - [User Input and Context Retrieval](#1-user-input-and-context-retrieval)
+  - [Querying and Data Integration](#2-querying-and-data-integration)
+  - [Chat Session and Context Management](#3-chat-session-and-context-management)
+  - [Frontend and User Experience](#4-frontend-and-user-experience)
+- [Customizing to Your Needs](#customizing-to-your-needs)
+  - [Color Scheme](#color-scheme)
+  - [Creating Tools for the Agent](#creating-tools-for-the-agent)
+  - [Customizing the Agent Prompt](#customizing-the-agent-prompt)
 
 ## Getting Started
 
